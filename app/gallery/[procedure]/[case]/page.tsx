@@ -1,22 +1,67 @@
-import { GetServerSideProps } from 'next'
-import client from '../../../../sanity/lib/client'
-import { casesByProcedureQuery } from '../../../../sanity/lib/queries'
-import GalleryItem from '../../../../components/GalleryItem'
+'use client';
 
-const Case = ({ caseItem }: any) => {
+import { useSearchParams } from 'next/navigation'; // Use useSearchParams
+import { useEffect, useState } from 'react';
+import { fetchCaseById } from '../../../../sanity/lib/queries';
+
+interface Media {
+  _type: 'image' | 'video';
+  url: string;
+  mimeType?: string; // Optional, only for videos
+}
+
+interface Case {
+  _id: string;
+  title: string;
+  media: Media[];
+}
+
+const CasePage = () => {
+  const searchParams = useSearchParams();
+  const caseId = searchParams.get('caseId');
+  const [caseData, setCaseData] = useState<Case | null>(null);
+
+  useEffect(() => {
+    console.log('Fetching case with ID:', caseId); // Log caseId
+    if (caseId) {
+      const fetchCase = async () => {
+        try {
+          const data = await fetchCaseById(caseId as string);
+          console.log('Fetched case data:', data); // Log fetched data
+          setCaseData(data);
+        } catch (error) {
+          console.error('Error fetching case data:', error);
+        }
+      };
+
+      fetchCase();
+    }
+  }, [caseId]);
+
   return (
-    <div>
-      <h1 className="text-4xl mb-8">{caseItem.title}</h1>
-      <GalleryItem item={caseItem} />
+    <div className="flex">
+      <div className="w-3/4 p-4">
+        {caseData ? (
+          <>
+            <h2 className="text-white mb-4">{caseData.title}</h2>
+            {caseData.media.map((media, index) => (
+              <div key={index} className="mb-4">
+                {media._type === 'image' ? (
+                  <img src={media.url} alt={caseData.title} className="object-cover w-full h-64" />
+                ) : (
+                  <video controls className="w-full h-64">
+                    <source src={media.url} type={media.mimeType} />
+                  </video>
+                )}
+              </div>
+            ))}
+          </>
+        ) : (
+          <h2 className="text-white">Loading...</h2>
+        )}
+      </div>
     </div>
-  )
-}
+  );
+};
 
-export const getServerSideProps: GetServerSideProps = async ({ params }) => {
-  const caseItem = await client.fetch(casesByProcedureQuery, { procedureId: params?.procedure }).then((cases: any[]) =>
-    cases.find((c) => c._id === params?.case)
-  )
-  return { props: { caseItem } }
-}
-
-export default Case
+export default CasePage;
