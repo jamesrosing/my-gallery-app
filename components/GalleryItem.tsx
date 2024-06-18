@@ -1,7 +1,4 @@
-'use client';
-
-
-import { FC } from 'react';
+import React from 'react';
 
 interface Media {
   _type: 'image' | 'video';
@@ -9,26 +6,28 @@ interface Media {
   mimeType?: string; // Optional, only for videos
 }
 
-interface GalleryItemProps {
-  item: {
-    title: string;
-    media: Media[];
-  };
+interface Case {
+  _id: string;
+  title: string;
+  media: Media[];
 }
 
-const GalleryItem: FC<GalleryItemProps> = ({ item }) => {
+interface GalleryItemProps {
+  caseData: Case | null; // Allow null for initial state
+}
+
+const GalleryItem: React.FC<GalleryItemProps> = ({ caseData }) => {
+  if (!caseData || !caseData.media) {
+    return <div className="text-white">No media available for this case.</div>;
+  }
+
   return (
-    <div className="relative">
-      <h3>{item.title}</h3>
-      {item.media.map((media, index) => (
-        <div key={index}>
+    <div>
+      <h2 className="text-white mb-4">{caseData.title}</h2>
+      {caseData.media.map((media, index) => (
+        <div key={index} className="mb-4">
           {media._type === 'image' ? (
-            <img
-              src={media.url}
-              alt={item.title}
-              className="object-cover w-full h-64"
-              loading="lazy"
-            />
+            <img src={media.url} alt={caseData.title} className="object-cover w-full h-64" />
           ) : (
             <video controls className="w-full h-64">
               <source src={media.url} type={media.mimeType} />

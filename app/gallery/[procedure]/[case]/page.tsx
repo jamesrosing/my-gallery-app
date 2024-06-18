@@ -1,7 +1,8 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation'; // Use useSearchParams
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import GalleryItem from '../../../../components/GalleryItem';
 import { fetchCaseById } from '../../../../sanity/lib/queries';
 
 interface Media {
@@ -16,7 +17,7 @@ interface Case {
   media: Media[];
 }
 
-const CasePage = () => {
+const CasePage: React.FC = () => {
   const searchParams = useSearchParams();
   const caseId = searchParams.get('caseId');
   const [caseData, setCaseData] = useState<Case | null>(null);
@@ -44,17 +45,21 @@ const CasePage = () => {
         {caseData ? (
           <>
             <h2 className="text-white mb-4">{caseData.title}</h2>
-            {caseData.media.map((media, index) => (
-              <div key={index} className="mb-4">
-                {media._type === 'image' ? (
-                  <img src={media.url} alt={caseData.title} className="object-cover w-full h-64" />
-                ) : (
-                  <video controls className="w-full h-64">
-                    <source src={media.url} type={media.mimeType} />
-                  </video>
-                )}
-              </div>
-            ))}
+            {caseData.media ? (
+              caseData.media.map((media, index) => (
+                <div key={index} className="mb-4">
+                  {media._type === 'image' ? (
+                    <img src={media.url} alt={caseData.title} className="object-cover w-full h-64" />
+                  ) : (
+                    <video controls className="w-full h-64">
+                      <source src={media.url} type={media.mimeType} />
+                    </video>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-white">No media available for this case.</div>
+            )}
           </>
         ) : (
           <h2 className="text-white">Loading...</h2>

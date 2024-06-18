@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Gallery from '../../components/Gallery';
 import { fetchAllProcedures, fetchCasesByProcedure, fetchCaseById } from '../../sanity/lib/queries';
 
 interface Procedure {
@@ -8,13 +9,19 @@ interface Procedure {
   title: string;
 }
 
+interface Media {
+  _type: 'image' | 'video';
+  url: string;
+  mimeType?: string; // Optional, only for videos
+}
+
 interface Case {
   _id: string;
   title: string;
-  media: { _type: string; url: string; mimeType?: string }[];
+  media: Media[];
 }
 
-const GalleryPage = () => {
+const GalleryPage: React.FC = () => {
   const [procedures, setProcedures] = useState<Procedure[]>([]);
   const [selectedProcedure, setSelectedProcedure] = useState<string | null>(null);
   const [cases, setCases] = useState<Case[]>([]);
@@ -22,8 +29,13 @@ const GalleryPage = () => {
 
   useEffect(() => {
     const fetchProcedures = async () => {
-      const data = await fetchAllProcedures();
-      setProcedures(data);
+      try {
+        const data = await fetchAllProcedures();
+        console.log('Fetched procedures:', data); // Log fetched procedures
+        setProcedures(data);
+      } catch (error) {
+        console.error('Failed to fetch procedures:', error);
+      }
     };
 
     fetchProcedures();
@@ -31,83 +43,38 @@ const GalleryPage = () => {
 
   const handleProcedureClick = async (procedureId: string) => {
     setSelectedProcedure(procedureId);
-    const data = await fetchCasesByProcedure(procedureId);
-    setCases(data);
-    setSelectedCase(null); // Reset the selected case when a new procedure is selected
+    try {
+      const data = await fetchCasesByProcedure(procedureId);
+      console.log('Fetched cases:', data); // Log fetched cases
+      setCases(data);
+      setSelectedCase(null); // Reset selected case when a new procedure is selected
+    } catch (error) {
+      console.error('Failed to fetch cases:', error);
+    }
   };
 
   const handleCaseClick = async (caseId: string) => {
-    const data = await fetchCaseById(caseId);
-    setSelectedCase(data);
+    try {
+      const data = await fetchCaseById(caseId);
+      console.log('Fetched case:', data); // Log fetched case
+      setSelectedCase(data);
+    } catch (error) {
+      console.error('Failed to fetch case:', error);
+    }
   };
 
+  console.log('GalleryPage State:', { procedures, selectedProcedure, cases, selectedCase });
+
   return (
-    <div className="flex">
-      {/* Left Column: Procedures and Cases */}
-      <div className="w-1/4 p-4">
-        <h2 className="text-white mb-4">Procedures</h2>
-        <ul>
-          {procedures.map((procedure) => (
-            <li key={procedure._id}>
-              <button onClick={() => handleProcedureClick(procedure._id)} className="text-blue-500 hover:underline">
-                {procedure.title}
-              </button>
-              {selectedProcedure === procedure._id && (
-                <ul className="ml-4 mt-2">
-                  {cases.map((caseItem) => (
-                    <li key={caseItem._id}>
-                      <button onClick={() => handleCaseClick(caseItem._id)} className="text-blue-500 hover:underline">
-                        {caseItem.title}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Middle Column: Case Details */}
-      <div className="w-1/2 p-4">
-        {selectedCase ? (
-          <>
-            <h2 className="text-white mb-4">{selectedCase.title}</h2>
-            {selectedCase.media.map((media, index) => (
-              <div key={index} className="mb-4">
-                {media._type === 'image' ? (
-                  <img src={media.url} alt={selectedCase.title} className="object-cover w-full h-64" />
-                ) : (
-                  <video controls className="w-full h-64">
-                    <source src={media.url} type={media.mimeType} />
-                  </video>
-                )}
-              </div>
-            ))}
-          </>
-        ) : (
-          <h2 className="text-white">Select a case to view details</h2>
-        )}
-      </div>
-
-      {/* Right Column: Placeholder for "On this page" */}
-      <div className="w-1/4 p-4">
-        <h2 className="text-white">On this page</h2>
-        {selectedProcedure && (
-          <ul>
-            {cases.map((caseItem) => (
-              <li key={caseItem._id}>
-                <button onClick={() => handleCaseClick(caseItem._id)} className="text-blue-500 hover:underline">
-                  {caseItem.title}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
+    <Gallery
+      procedures={procedures}
+      selectedProcedure={selectedProcedure}
+      onProcedureClick={handleProcedureClick}
+      cases={cases}
+      selectedCase={selectedCase}
+      onCaseClick={handleCaseClick}
+    />
   );
 };
 
 export default GalleryPage;
-

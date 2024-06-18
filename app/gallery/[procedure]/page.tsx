@@ -1,9 +1,9 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation'; // Use useSearchParams
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { fetchCasesByProcedure } from '../../../sanity/lib/queries';
+import GalleryItem from '../../../components/GalleryItem';
+import { fetchCasesByProcedure, fetchCaseById } from '../../../sanity/lib/queries';
 
 interface Media {
   _type: 'image' | 'video';
@@ -21,17 +21,33 @@ const ProcedurePage = () => {
   const searchParams = useSearchParams();
   const procedureId = searchParams.get('procedureId');
   const [cases, setCases] = useState<Case[]>([]);
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
   useEffect(() => {
     if (procedureId) {
       const fetchCases = async () => {
-        const data = await fetchCasesByProcedure(procedureId);
-        setCases(data);
+        try {
+          const data = await fetchCasesByProcedure(procedureId);
+          console.log('Fetched cases:', data); // Log fetched cases
+          setCases(data);
+        } catch (error) {
+          console.error('Failed to fetch cases:', error);
+        }
       };
 
       fetchCases();
     }
   }, [procedureId]);
+
+  const handleCaseClick = async (caseId: string) => {
+    try {
+      const caseData = await fetchCaseById(caseId);
+      console.log('Fetched case:', caseData); // Log fetched case
+      setSelectedCase(caseData);
+    } catch (error) {
+      console.error('Failed to fetch case:', error);
+    }
+  };
 
   return (
     <div className="flex">
@@ -41,17 +57,21 @@ const ProcedurePage = () => {
         <ul>
           {cases.map((caseItem) => (
             <li key={caseItem._id}>
-              <Link href={`/gallery/procedure/case?caseId=${caseItem._id}`} className="text-blue-500 hover:underline">
+              <button onClick={() => handleCaseClick(caseItem._id)} className="text-blue-500 hover:underline">
                 {caseItem.title}
-              </Link>
+              </button>
             </li>
           ))}
         </ul>
       </div>
 
-      {/* Middle Column: Placeholder for Case Selection */}
+      {/* Middle Column: Selected Case Details */}
       <div className="w-1/2 p-4">
-        <h2 className="text-white">Select a case to view details</h2>
+        {selectedCase ? (
+          <GalleryItem caseData={selectedCase} />
+        ) : (
+          <h2 className="text-white">Select a case to view details</h2>
+        )}
       </div>
 
       {/* Right Column: Cases List */}
@@ -60,9 +80,9 @@ const ProcedurePage = () => {
         <ul>
           {cases.map((caseItem) => (
             <li key={caseItem._id}>
-              <Link href={`/gallery/procedure/case?caseId=${caseItem._id}`} className="text-blue-500 hover:underline">
+              <button onClick={() => handleCaseClick(caseItem._id)} className="text-blue-500 hover:underline">
                 {caseItem.title}
-              </Link>
+              </button>
             </li>
           ))}
         </ul>

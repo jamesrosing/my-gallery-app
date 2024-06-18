@@ -1,9 +1,5 @@
-'use client';
-
-
-import { FC, useEffect, useState } from 'react';
+import React from 'react';
 import GalleryItem from './GalleryItem';
-import { fetchGalleryItems } from '../sanity/lib/queries';
 
 interface Media {
   _type: 'image' | 'video';
@@ -11,50 +7,82 @@ interface Media {
   mimeType?: string; // Optional, only for videos
 }
 
-interface GalleryItem {
+interface Case {
   _id: string;
   title: string;
   media: Media[];
 }
 
-const Gallery: FC = () => {
-  const [items, setItems] = useState<GalleryItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+interface Procedure {
+  _id: string;
+  title: string;
+}
 
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        const data = await fetchGalleryItems();
-        console.log('Gallery Items:', data); // Debugging line
-        setItems(data);
-      } catch (error) {
-        console.error('Error fetching gallery items:', error);
-        setError('Failed to load gallery items.');
-      } finally {
-        setLoading(false);
-      }
-    };
+interface GalleryProps {
+  procedures: Procedure[];
+  selectedProcedure: string | null;
+  onProcedureClick: (procedureId: string) => void;
+  cases: Case[];
+  selectedCase: Case | null;
+  onCaseClick: (caseId: string) => void;
+}
 
-    fetchItems();
-  }, []);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>{error}</div>;
-  }
+const Gallery: React.FC<GalleryProps> = ({ procedures, selectedProcedure, onProcedureClick, cases, selectedCase, onCaseClick }) => {
+  console.log('Gallery Props:', { procedures, selectedProcedure, cases, selectedCase });
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {items.map((item) => (
-        <GalleryItem key={item._id} item={item} />
-      ))}
+    <div className="flex">
+      {/* Left Column: Procedures and Cases */}
+      <div className="w-1/4 p-4">
+        <h2 className="text-white mb-4">Procedures</h2>
+        <ul>
+          {procedures.map((procedure) => (
+            <li key={procedure._id}>
+              <button onClick={() => onProcedureClick(procedure._id)} className="text-blue-500 hover:underline">
+                {procedure.title}
+              </button>
+              {selectedProcedure === procedure._id && (
+                <ul className="ml-4 mt-2">
+                  {cases.map((caseItem) => (
+                    <li key={caseItem._id}>
+                      <button onClick={() => onCaseClick(caseItem._id)} className="text-blue-500 hover:underline">
+                        {caseItem.title}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Middle Column: Case Details */}
+      <div className="w-1/2 p-4">
+        {selectedCase ? (
+          <GalleryItem caseData={selectedCase} />
+        ) : (
+          <h2 className="text-white">Select a case to view details</h2>
+        )}
+      </div>
+
+      {/* Right Column: Placeholder for "On this page" */}
+      <div className="w-1/4 p-4">
+        <h2 className="text-white">On this page</h2>
+        {selectedProcedure && (
+          <ul>
+            {cases.map((caseItem) => (
+              <li key={caseItem._id}>
+                <button onClick={() => onCaseClick(caseItem._id)} className="text-blue-500 hover:underline">
+                  {caseItem.title}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 };
 
 export default Gallery;
-

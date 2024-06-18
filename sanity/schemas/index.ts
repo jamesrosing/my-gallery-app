@@ -1,4 +1,6 @@
-import procedure from './procedure'
-import caseSchema from './case'
+// sanity/schemas/index.ts
 
-export default [procedure, caseSchema]
+import caseSchema from './case';
+import procedureSchema from './procedure';
+
+export const schemaTypes = [caseSchema, procedureSchema];
